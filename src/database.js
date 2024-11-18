@@ -1,6 +1,6 @@
-import * as SQLite from "expo-sqlite";
+import * as SQLite from "expo-sqlite/legacy";
 
-const db = SQLite.openDatabaseSync("contacts.db");
+const db = SQLite.openDatabase("contacts.db");
 
 export const setupDatabase = () => {
   db.transaction((tx) => {

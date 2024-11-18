@@ -14,7 +14,7 @@ const App = () => {
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [contacts, setContacts] = useState([]);
-
+  const [editingContact, setEditingContact] = useState(null);
   useEffect(() => {
     setupDatabase();
     loadContacts();
@@ -47,6 +47,25 @@ const App = () => {
     }
   };
 
+  const updateContact = () => {
+    if (editingContact && name && phone && email) {
+      db.transaction((tx) => {
+        tx.executeSql(
+          "UPDATE contacts SET name = ?, phone = ?, email = ? WHERE id = ?;",
+          [name, phone, email, editingContact.id],
+          () => {
+            loadContacts();
+            setEditingContact(null);
+            setName("");
+            setPhone("");
+            setEmail("");
+          },
+          (_, error) => console.error(error)
+        );
+      });
+    }
+  };
+
   const deleteContact = (id) => {
     db.transaction((tx) => {
       tx.executeSql(
@@ -58,9 +77,18 @@ const App = () => {
     });
   };
 
+  const handleEditContact = (contact) => {
+    setEditingContact(contact);
+    setName(contact.name);
+    setPhone(contact.phone);
+    setEmail(contact.email);
+  };
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Contacts</Text>
+      <Text style={styles.title}>
+        {editingContact ? "Edit Contact" : "Add Contact"}
+      </Text>
       <TextInput
         placeholder="Name"
         value={name}
@@ -68,7 +96,7 @@ const App = () => {
         style={styles.input}
       />
       <TextInput
-        placeholder="phone"
+        placeholder="Phone"
         value={phone}
         onChangeText={setPhone}
         style={styles.input}
@@ -79,7 +107,11 @@ const App = () => {
         onChangeText={setEmail}
         style={styles.input}
       />
-      <Button title="Add Contact" onPress={addContact} />
+      {editingContact ? (
+        <Button title="Save Changes" onPress={updateContact} />
+      ) : (
+        <Button title="Add Contact" onPress={addContact} />
+      )}
       <FlatList
         data={contacts}
         keyExtractor={(item) => item.id.toString()}
@@ -88,7 +120,8 @@ const App = () => {
             <Text>{item.name}</Text>
             <Text>{item.phone}</Text>
             <Text>{item.email}</Text>
-            <Button title="delete" onPress={() => deleteContact(item.id)} />
+            <Button title="Edit" onPress={() => handleEditContact(item)} />
+            <Button title="Delete" onPress={() => deleteContact(item.id)} />
           </View>
         )}
       />
